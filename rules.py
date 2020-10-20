@@ -139,7 +139,7 @@ class default:
         self.defaults = defaults
 
     def __call__(self, fields):
-        for key, value in self.defaults.iteritems():
+        for key, value in self.defaults.items():
             if key not in fields:
                 fields[key] = value
 

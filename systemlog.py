@@ -1340,7 +1340,8 @@ capture_message = switch((
         rule(
             capture(r'starting user-requested repair of range \[?\((?P<range_begin>[^,]*),(?P<range_end>[^\]]*)\]\]? for keyspace (?P<keyspace>[^ ]*) and column families \[(?P<tables>[^\]]*)\]'),
             convert(split(','), 'tables'),
-            update(event_product='cassandra', event_category='repair', event_type='session_failure')),
+            # doubt this is a failure
+            update(event_product='cassandra', event_category='repair', event_type='command_begin')),
 
         rule(
             capture(r"Flushing CFS\(Keyspace='(?P<keyspace>[^']*)', ColumnFamily='(?P<table>[^']*)'\) to relieve memory pressure"),

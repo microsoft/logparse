@@ -21,7 +21,7 @@ capture_message = switch((
 
         rule(
             capture(r'Heap size: (?P<heap_used>[0-9]*)/(?P<total_heap>[0-9]*)'), 
-            convert(int, 'heap_used', 'total_heap'), 
+            #convert(int, 'heap_used', 'total_heap'), 
             update(event_product='cassandra', event_category='startup', event_type='heap_size')),
 
         rule(
@@ -59,7 +59,7 @@ capture_message = switch((
 
         rule(
             capture(r'(?P<memory_type>.*) memory: init = (?P<memory_init>[0-9]*)\([0-9]*K\) used = (?P<memory_used>[0-9]*)\([0-9]*K\) committed = (?P<memory_committed>[0-9]*)\([0-9]*K\) max = (?P<memory_max>[0-9-]*)\([0-9-]*K\)'),
-            convert(int, 'memory_init', 'memory_used', 'memory_committed', 'memory_max'),
+            #convert(int, 'memory_init', 'memory_used', 'memory_committed', 'memory_max'),
             update(event_product='cassandra', event_category='startup', event_type='memory_size')),
 
         rule(
@@ -127,7 +127,7 @@ capture_message = switch((
     case('CqlSlowLogWriter'),
         rule(
             capture(r'Recording statements with duration of (?P<duration>[0-9]+) in slow log'),
-            convert(int, 'duration'),
+            #convert(int, 'duration'),
             update(event_product='dse', event_category='cql', event_type='slow_query')),
 
     case('GCInspector'), 
@@ -139,17 +139,17 @@ capture_message = switch((
 
         rule(
             capture(r'GC for (?P<gc_type>[A-Za-z]*): (?P<duration>[0-9]*) ms for (?P<collections>[0-9]*) collections, (?P<used>[0-9]*) used; max is (?P<max>[0-9]*)'),
-            convert(int, 'duration', 'collections', 'used', 'max'),
+            #convert(int, 'duration', 'collections', 'used', 'max'),
             update(event_product='cassandra', event_category='garbage_collection', event_type='pause')),
 
         rule(
             capture(r'(?P<gc_type>[A-Za-z]*) GC in (?P<duration>[0-9]*)ms. (( CMS)? Old Gen: (?P<oldgen_before>[0-9]*) -> (?P<oldgen_after>[0-9]*);)?( Code Cache: (?P<codecache_before>[0-9]*) -> (?P<codecache_after>[0-9]*);)?( Compressed Class Space: (?P<compressed_class_before>[0-9]*) -> (?P<compressed_class_after>[0-9]*);)?( CMS Perm Gen: (?P<permgen_before>[0-9]*) -> (?P<permgen_after>[0-9]*);)?( Metaspace: (?P<metaspace_before>[0-9]*) -> (?P<metaspace_after>[0-9]*);)?( Par Eden Space: (?P<eden_before>[0-9]*) -> (?P<eden_after>[0-9]*);)?( Par Survivor Space: (?P<survivor_before>[0-9]*) -> (?P<survivor_after>[0-9]*))?'),
-            convert(int, 'duration', 'oldgen_before', 'oldgen_after', 'permgen_before', 'permgen_after', 'codecache_before', 'codecache_after', 'compressed_class_before', 'compressed_class_after', 'metaspace_before', 'metaspace_after', 'eden_before', 'eden_after', 'survivor_before', 'survivor_after'),
+            #convert(int, 'duration', 'oldgen_before', 'oldgen_after', 'permgen_before', 'permgen_after', 'codecache_before', 'codecache_after', 'compressed_class_before', 'compressed_class_after', 'metaspace_before', 'metaspace_after', 'eden_before', 'eden_after', 'survivor_before', 'survivor_after'),
             update(event_product='cassandra', event_category='garbage_collection', event_type='pause')),
 
         rule(
             capture(r'(?P<gc_type>.+) Generation GC in (?P<duration>[0-9]+)ms.  (Compressed Class Space: (?P<compressed_class_before>[0-9]+) -> (?P<compressed_class_after>[0-9]+);)?.((.+) Eden Space: (?P<eden_before>[0-9]+) -> (?P<eden_after>[0-9]+);)?.((.+) Old Gen: (?P<oldgen_before>[0-9]+) -> (?P<oldgen_after>[0-9]+);)?.((.+) Survivor Space: (?P<survivor_before>[0-9]+) -> (?P<survivor_after>[0-9]+);)?.(Metaspace: (?P<metaspace_before>[0-9]+) -> (?P<metaspace_after>[0-9]+))?'),
-            convert(int, 'duration', 'oldgen_before', 'oldgen_after', 'permgen_before', 'permgen_after', 'compressed_class_before', 'compressed_class_after', 'metaspace_before', 'metaspace_after', 'eden_before', 'eden_after', 'survivor_before', 'survivor_after'),
+            #convert(int, 'duration', 'oldgen_before', 'oldgen_after', 'permgen_before', 'permgen_after', 'compressed_class_before', 'compressed_class_after', 'metaspace_before', 'metaspace_after', 'eden_before', 'eden_after', 'survivor_before', 'survivor_after'),
             update(event_product='cassandra', event_category='garbage_collection', event_type='pause')),
 
     case('ColumnFamilyStore'),
@@ -158,7 +158,7 @@ capture_message = switch((
             capture(
                 r'Enqueuing flush of Memtable-(?P<table>[^@]*)@(?P<hash_code>[0-9]*)\((?P<serialized_bytes>[0-9]*)/(?P<live_bytes>[0-9]*) serialized/live bytes, (?P<ops>[0-9]*) ops\)',
                 r'Enqueuing flush of (?P<table>[^:]*): (?P<on_heap_bytes>[0-9]*) \((?P<on_heap_limit>[0-9]*)%\) on-heap, (?P<off_heap_bytes>[0-9]*) \((?P<off_heap_limit>[0-9]*)%\) off-heap'),
-            convert(int, 'hash_code', 'serialized_bytes', 'live_bytes', 'ops', 'on_heap_bytes', 'off_heap_bytes', 'on_heap_limit', 'off_heap_limit'),
+            #convert(int, 'hash_code', 'serialized_bytes', 'live_bytes', 'ops', 'on_heap_bytes', 'off_heap_bytes', 'on_heap_limit', 'off_heap_limit'),
             update(event_product='cassandra', event_category='memtable', event_type='enqueue_flush')), 
 
         rule(
@@ -186,7 +186,7 @@ capture_message = switch((
             capture(
                 r'Writing Memtable-(?P<table>[^@]*)@(?P<hash_code>[0-9]*)\(((?P<serialized_bytes>[0-9]*)|(?P<serialized_kb>[0-9.]*)KiB|(?P<serialized_mb>[0-9.]*)MiB) serialized bytes, (?P<ops>[0-9]*) ops, (?P<on_heap_limit>[0-9]*)%/(?P<off_heap_limit>[0-9]*)% of on/off-heap limit\)',
                 r'Writing Memtable-(?P<table>[^@]*)@(?P<hash_code>[0-9]*)\((?P<serialized_bytes>[0-9]*)/(?P<live_bytes>[0-9]*) serialized/live bytes, (?P<ops>[0-9]*) ops\)'),
-            convert(int, 'hash_code', 'serialized_bytes', 'live_bytes', 'ops', 'on_heap_limit', 'off_heap_limit'),
+            #convert(int, 'hash_code', 'serialized_bytes', 'live_bytes', 'ops', 'on_heap_limit', 'off_heap_limit'),
             convert(float, 'serialized_kb'),
             update(event_product='cassandra', event_category='memtable', event_type='begin_flush')),
 
@@ -194,14 +194,14 @@ capture_message = switch((
             capture(
                 r'Completed flushing (?P<filename>[^ ]*) \(((?P<file_size_mb>[0-9.]*)MiB|(?P<file_size_kb>[0-9.]*)KiB|(?P<file_size_bytes>[0-9]*) bytes)\) for commitlog position ReplayPosition\(segmentId=(?P<segment_id>[0-9]*), position=(?P<position>[0-9]*)\)',
                 r'Completed flushing; nothing needed to be retained.  Commitlog position was ReplayPosition\(segmentId=(?P<segment_id>[0-9]*), position=(?P<position>[0-9]*)\)'),
-            convert(int, 'file_size_bytes', 'segment_id', 'position'),
+            #convert(int, 'file_size_bytes', 'segment_id', 'position'),
             convert(float, 'file_size_kb'),
             update(event_product='cassandra', event_category='memtable', event_type='end_flush')),
 
         rule(
             capture(r"CFS\(Keyspace='(?P<keyspace>[^']*)', ColumnFamily='(?P<table>[^']*)'\) liveRatio is (?P<live_ratio>[0-9.]*) \(just-counted was (?P<just_counted>[0-9.]*)\).  calculation took (?P<duration>[0-9]*)ms for (?P<cells>[0-9]*) (columns|cells)"),
             convert(float, 'live_ratio', 'just_counted'),
-            convert(int, 'duration', 'cells'),
+            #convert(int, 'duration', 'cells'),
             update(event_product='cassandra', event_category='memtable', event_type='live_ratio_estimate')),
 
         rule(
@@ -223,7 +223,7 @@ capture_message = switch((
 
         rule(
             capture(r"Compaction interrupted: (?P<compaction_type>[^@]*)@(?P<compaction_id>[^(]*)\((?P<table>[^,]*), (?P<keyspace>[^,]*), (?P<bytes_complete>[0-9]*)/(?P<bytes_total>[0-9]*)\)bytes"),
-            convert(int, 'bytes_complete', 'bytes_total'),
+            #convert(int, 'bytes_complete', 'bytes_total'),
             update(event_product='cassandra', event_category='compaction', event_type='compaction_interrupted')),
 
         rule(
@@ -241,7 +241,7 @@ capture_message = switch((
             capture(
                 r'Compacted (?P<sstable_count>[0-9]*) sstables to \[(?P<output_sstable>[^\]]*)\].  (?P<input_bytes>[0-9,]*) bytes to (?P<output_bytes>[0-9,]*) \(~(?P<percent_of_original>[0-9]*)% of original\) in (?P<duration>[0-9,]*)ms = (?P<rate>[0-9.]*)MB/s.  (?P<total_partitions>[0-9,]*) total (partitions|rows), (?P<unique_partitions>[0-9,]*) unique.  (Row|Partition) merge counts were \{(?P<partition_merge_counts>[^}]*)\}',
                 r'Compacted (?P<sstable_count>[0-9]*) sstables to \[(?P<output_sstable>[^\]]*)\].  (?P<input_bytes>[0-9,]*) bytes to (?P<output_bytes>[0-9,]*) \(~(?P<percent_of_original>[0-9]*)% of original\) in (?P<duration>[0-9,]*)ms = (?P<rate>[0-9.]*)MB/s.  (?P<total_partitions>[0-9,]*) total (partitions|rows) merged to (?P<unique_partitions>[0-9,]*).  (Row|Partition) merge counts were \{(?P<partition_merge_counts>[^}]*)\}'),
-            convert(int_with_commas, 'sstable_count', 'input_bytes', 'output_bytes', 'percent_of_original', 'duration', 'total_partitions', 'unique_partitions'),
+            #convert(int_with_commas, 'sstable_count', 'input_bytes', 'output_bytes', 'percent_of_original', 'duration', 'total_partitions', 'unique_partitions'),
             convert(float, 'rate'),
             convert(split(', '), 'partition_merge_counts'),
             update(event_product='cassandra', event_category='compaction', event_type='end_compaction')),
@@ -250,14 +250,14 @@ capture_message = switch((
 
         rule(
             capture(r'Compacting large (partition|row) (?P<keyspace>[^/]*)/(?P<table>[^:]*):(?P<partition_key>.*) \((?P<partition_size>[0-9]*) bytes\) incrementally'),
-            convert(int, 'partition_size'),
+            #convert(int, 'partition_size'),
             update(event_product='cassandra', event_category='compaction', event_type='incremental')),
 
     case('SSTableWriter'),
         
         rule(
             capture(r'Compacting large partition (?P<keyspace>.+)/(?P<table>.+):(?P<partition_key>.+) \((?P<partition_size>\d+) bytes\)'),
-            convert(int, 'partition_size'),
+            #convert(int, 'partition_size'),
             update(event_product='cassandra', event_category='compaction', event_type='large_partition')),
 
 
@@ -269,7 +269,7 @@ capture_message = switch((
 
         rule(
             capture(r'\[repair #(?P<session_id>[^\]]*)\] Endpoints (?P<node1>[^ ]*) and (?P<node2>[^ ]*) have (?P<ranges>[0-9]*) range\(s\) out of sync for (?P<table>.*)'),
-            convert(int, 'ranges'),
+            #convert(int, 'ranges'),
             update(event_product='cassandra', event_category='repair', event_type='endpoints_inconsistent')),
 
     case('RepairSession', 'AntiEntropyService'),
@@ -321,7 +321,7 @@ capture_message = switch((
         rule(
             capture(r'Stream context metadata \[(?P<metadata>[^\]]*)\], (?P<sstable_count>[0-9]*) sstables.'),
             convert(split(', '), 'metadata'),
-            convert(int, 'sstable_count'),
+            #convert(int, 'sstable_count'),
             update(event_product='cassandra', event_category='stream', event_type='context_metadata')),
 
         rule(
@@ -352,7 +352,7 @@ capture_message = switch((
 
         rule(
             capture(r'\[Stream #(?P<session_id>[^\]]*)\] Prepare completed. Receiving (?P<receiving_files>[0-9]*) files\((?P<receiving_bytes>[0-9]*) bytes\), sending (?P<sending_files>[0-9]*) files\((?P<sending_bytes>[0-9]*) bytes\)'),
-            convert(int, 'receiving_files', 'receiving_bytes', 'sending_files', 'sending_bytes'),
+            #convert(int, 'receiving_files', 'receiving_bytes', 'sending_files', 'sending_bytes'),
             update(event_product='cassandra', event_category='stream', event_type='prepare_complete')),
 
         rule(
@@ -385,7 +385,7 @@ capture_message = switch((
 
         rule(
             capture(r'\[streaming task #(?P<session_id>[^\]]*)\] Performing streaming repair of (?P<ranges>[0-9]*) ranges with (?P<endpoint>[^ ]*)'),
-            convert(int, 'ranges'),
+            #convert(int, 'ranges'),
             update(event_product='cassandra', event_category='stream', event_type='begin_task')),
 
         rule(
@@ -394,12 +394,12 @@ capture_message = switch((
 
         rule(
             capture(r'\[(repair|streaming task) #(?P<session_id>[^\]]*)\] Forwarding streaming repair of (?P<ranges>[0-9]*) ranges to (?P<forwarded_endpoint>[^ ]*) \(to be streamed with (?P<target_endpoint>[^)]*)\)'),
-            convert(int, 'ranges'),
+            #convert(int, 'ranges'),
             update(event_product='cassandra', event_category='stream', event_type='forwarding')),
 
         rule(
             capture(r'\[streaming task #(?P<session_id>[^\]]*)\] Received task from (?P<source_endpoint>[^ ]*) to stream (?P<ranges>[0-9]*) ranges to (?P<target_endpoint>.*)'),
-            convert(int, 'ranges'),
+            #convert(int, 'ranges'),
             update(event_product='cassandra', event_category='stream', event_type='received_task')),
 
         rule(
@@ -482,14 +482,14 @@ capture_message = switch((
 
         rule(
             capture(r'Gossip stage has (?P<pending_tasks>[0-9]+) pending tasks; skipping status check \(no nodes will be marked down\)'),
-            convert(int, 'pending_tasks'),
+            #convert(int, 'pending_tasks'),
             update(event_product='cassandra', event_category='gossip', event_type='pending_tasks')),
 
     case('SSTableReader'),
 
         rule(
             capture(r'Opening (?P<sstable_name>[^ ]*) \((?P<bytes>[0-9]*) bytes\)'),
-            convert(int, 'bytes'),
+            #convert(int, 'bytes'),
             update(event_product='cassandra', event_category='startup', event_type='sstable_open')),
 
     case('StatusLogger'),
@@ -500,7 +500,7 @@ capture_message = switch((
 
         rule(
             capture(r'(?P<pool_name>[A-Za-z_]+) +((?P<active>[0-9]+)|n/a) +(?P<pending>[0-9]+)(/(?P<pending_responses>[0-9]+))?( +(?P<completed>[0-9]+) +(?P<blocked>[0-9]+) +(?P<all_time_blocked>[0-9]+))?'),
-            convert(int, 'active', 'pending', 'pending_responses', 'completed', 'blocked', 'all_time_blocked'),
+            #convert(int, 'active', 'pending', 'pending_responses', 'completed', 'blocked', 'all_time_blocked'),
             update(event_product='cassandra', event_category='status', event_type='threadpool_status')),
 
         rule(
@@ -509,7 +509,7 @@ capture_message = switch((
 
         rule(
             capture(r'(?P<cache_type>[A-Za-z]*Cache(?! Type)) *(?P<size>[0-9]*) *(?P<capacity>[0-9]*) *(?P<keys_to_save>[^ ]*) *(?P<provider>[A-Za-z_.$]*)'),
-            convert(int, 'size', 'capacity'),
+            #convert(int, 'size', 'capacity'),
             update(event_product='cassandra', event_category='status', event_type='cache_status')),
 
         rule(
@@ -519,7 +519,7 @@ capture_message = switch((
 
         rule(
             capture(r'(?P<keyspace>[^.]*)\.(?P<table>[^ ]*) +(?P<ops>[0-9]*),(?P<data>[0-9]*)'),
-            convert(int, 'ops', 'data'),
+            #convert(int, 'ops', 'data'),
             update(event_product='cassandra', event_category='status', event_type='memtable_status')),
 
     case('CommitLogReplayer', 'CommitLog'),
@@ -535,7 +535,7 @@ capture_message = switch((
 
         rule(
             capture(r'Replaying (?P<commitlog_file>[^ ]*) \(CL version (?P<commitlog_version>[0-9]*), messaging version (?P<messaging_version>[0-9]*)\)'),
-            convert(int, 'commitlog_version', 'messaging_version'),
+            #convert(int, 'commitlog_version', 'messaging_version'),
             update(event_product='cassandra', event_category='startup', event_type='begin_commitlog_replay')),
 
         rule(
@@ -544,7 +544,7 @@ capture_message = switch((
 
         rule(
             capture(r'Log replay complete, (?P<replayed_mutations>[0-9]*) replayed mutations'),
-            convert(int, 'replayed_mutations'),
+            #convert(int, 'replayed_mutations'),
             update(event_product='cassandra', event_category='startup', event_type='end_commitlog_replay')),
 
     case('SecondaryIndex', 'SecondaryIndexManager'),
@@ -567,12 +567,12 @@ capture_message = switch((
 
         rule(
             capture(r'Throttling at (?P<work_requests>[0-9]*) work requests per second with target total queue size at (?P<target_queue_size>[0-9]*)'),
-            convert(int, 'work_requests', 'target_queue_size'),
+            #convert(int, 'work_requests', 'target_queue_size'),
             update(event_product='solr', event_category='backpressure', event_type='throttling')),
 
         rule(
             capture(r'Back pressure is active for (work pool )?(?P<work_pool>[^ ]*) (work pool )?with total work queue size (?P<queue_size>[0-9]*) and average processing time (?P<processing_time>[0-9]*)'),
-            convert(int, 'queue_size', 'processing_time'),
+            #convert(int, 'queue_size', 'processing_time'),
             update(event_product='solr', event_category='backpressure', event_type='active')),
 
         rule(
@@ -779,12 +779,12 @@ capture_message = switch((
 
         rule(
             capture(r'Increasing soft commit max time to (?P<max_time>[0-9]+)'),
-            convert(int, 'max_time'),
+            #convert(int, 'max_time'),
             update(event_product='solr', event_category='index', event_type='increasing_soft_commit')),
 
         rule(
             capture(r'Restoring soft commit max time back to (?P<max_time>[0-9]+)'),
-            convert(int, 'max_time'),
+            #convert(int, 'max_time'),
             update(event_product='solr', event_category='index', event_type='restoring_soft_commit')),
 
     case('DSESearchProperties'),
@@ -807,12 +807,12 @@ capture_message = switch((
 
         rule(
             capture('Shutting down CoreContainer instance=(?P<instance>[0-9]*)'),
-            convert(int, 'instance'),
+            #convert(int, 'instance'),
             update(event_product='solr', event_category='core', event_type='corecontainer_shutdown')),
 
         rule(
             capture('New CoreContainer (?P<instance>[0-9]*)'),
-            convert(int, 'instance'),
+            #convert(int, 'instance'),
             update(event_product='solr', event_category='core', event_type='corecontainer_new')),
 
         rule(
@@ -851,7 +851,7 @@ capture_message = switch((
         rule(
             capture(r'\[admin\] webapp=(?P<webapp>[^ ]*) path=(?P<path>[^ ]*) params=\{(?P<params>[^}]*)\} status=(?P<status>[0-9]*) QTime=(?P<qtime>[0-9]*)'),
             convert(split('&'), 'params'),
-            convert(int, 'status', 'qtime'),
+            #convert(int, 'status', 'qtime'),
             update(event_product='solr', event_category='dispatch', event_type='admin_access')),
 
         rule(
@@ -902,17 +902,17 @@ capture_message = switch((
 
         rule(
             capture(r'Timeout waiting for all directory ref counts to be released - gave up waiting on CachedDir<<refCount=(?P<ref_count>[0-9]*);path=(?P<path>[^;]*);done=(?P<done>[^>]*)>>'),
-            convert(int, 'ref_count'),
+            #convert(int, 'ref_count'),
             update(event_product='solr', event_category='directory_factory', event_type='close_directory_pending')),
 
         rule(
             capture(r'looking to close (?P<directory>[^ ]*) \[CachedDir<<refCount=(?P<ref_count>[0-9]*);path=(?P<path>[^;]*);done=(?P<done>[^>]*)>>\]'),
-            convert(int, 'ref_count'),
+            #convert(int, 'ref_count'),
             update(event_product='solr', event_category='directory_factory', event_type='close_directory_pending')),
 
         rule(
             capture(r'Closing (?P<directory_factory>[^ ]*) - (?P<directory_count>[0-9]*) directories currently being tracked'),
-            convert(int, 'ref_count'),
+            #convert(int, 'ref_count'),
             update(event_product='solr', event_category='directory_factory', event_type='close_directory_factory')),
 
     case('YamlConfigurationLoader', 'DseConfigYamlLoader', 'DatabaseDescriptor'),
@@ -981,7 +981,7 @@ capture_message = switch((
 
         rule(
             capture(r'(?P<leader_manager>[^:]*): Leader (?P<dc_army>[^ ]*) changed from (?P<old_leader>[^ ]*) to (?P<new_leader>[^ ]*) \[(?P<reason>[^\]]*)\] \[notified (?P<listeners_notified>[0-9]*) listeners\]'),
-            convert(int, 'listeners_notified'),
+            #convert(int, 'listeners_notified'),
             update(event_product='dse', event_category='jobtracker', event_type='leader_changed')),
 
         rule(
@@ -1012,20 +1012,20 @@ capture_message = switch((
 
         rule(
             capture(r'Started Spark Worker, connected to master (?P<master_host>[^:]*):(?P<master_port>[0-9]+)'),
-            convert(int, 'master_port'),
+            #convert(int, 'master_port'),
             update(event_product='spark', event_category='worker', event_type='worker_started')),
 
         rule(
             capture(
                 r'Spark Master not ready( yet)? at (?P<master_host>[^:]*):(?P<master_port>[0-9]+).*',
                 r'Spark Master not ready( yet)? at \(no configured master\)'),
-            convert(int, 'master_port'),
+            #convert(int, 'master_port'),
             update(event_product='spark', event_category='master', event_type='master_not_ready')),
 
     case('AbstractConnector'),
         rule(
             capture(r'Started SelectChannelConnector@(?P<ip>.+):(?P<port>.+)'),
-            convert(int, 'port'),
+            #convert(int, 'port'),
             update(event_product='spark', event_category='master', event_type='listening')),
 
     case('AbstractSparkRunner'),
@@ -1052,13 +1052,13 @@ capture_message = switch((
 
         rule(
             capture(r'Scanned over (?P<tombstoned_cells>[0-9]*) tombstones in (?P<keyspace>[^.]*).(?P<table>[^;]*); query aborted \(see tombstone_failure_threshold\)'),
-            convert(int, 'live_cells', 'tombstoned_cells', 'requested_columns'),
+            #convert(int, 'live_cells', 'tombstoned_cells', 'requested_columns'),
             convert(split(', '), 'deletion_info'),
             update(event_product='cassandra', event_category='tombstone', event_type='warning_threshold_exceeded')),
 
         rule(
             capture(r'Read (?P<live_cells>[0-9]*) live and (?P<tombstoned_cells>[0-9]*) tombstoned? cells in (?P<keyspace>[^.]*).(?P<table>[^ ]*)( for key: (?P<key>[^ ]*))? \(see tombstone_warn_threshold\). (?P<requested_columns>[0-9]*) columns (was|were) requested, slices=\[(?P<slice_start>[^-]*)-(?P<slice_end>[^\]]*)\](, delInfo=\{(?P<deletion_info>[^}]*)\})?'),
-            convert(int, 'live_cells', 'tombstoned_cells', 'requested_columns'),
+            #convert(int, 'live_cells', 'tombstoned_cells', 'requested_columns'),
             convert(split(', '), 'deletion_info'),
             update(event_product='cassandra', event_category='tombstone', event_type='error_threshold_exceeded')),
 
@@ -1066,7 +1066,7 @@ capture_message = switch((
 
         rule(
             capture(r'Batch of prepared statements for \[(?P<keyspace>[^.]*).(?P<table>[^\]]*)\] is of size (?P<batch_size>[0-9]*), exceeding specified threshold of (?P<batch_warn_threshold>[0-9]*) by (?P<threshold_exceeded_by>[0-9]*).'),
-            convert(int, 'batch_size', 'batch_warn_threshold', 'threshold_excess'),
+            #convert(int, 'batch_size', 'batch_warn_threshold', 'threshold_excess'),
             update(event_product='cassandra', event_category='batch', event_type='size_warning')),
     
     case('CustomTThreadPoolServer'),
@@ -1079,7 +1079,7 @@ capture_message = switch((
 
         rule(
             capture(r'Using TFramedTransport with a max frame size of (\{\}|(?P<max_frame_size>[0-9]*)) bytes.'),
-            convert(int, 'max_frame_size'),
+            #convert(int, 'max_frame_size'),
             update(event_product='cassandra', event_category='thrift', event_type='max_frame_size')),
 
         rule(
@@ -1090,12 +1090,12 @@ capture_message = switch((
 
        rule(
             capture(r'Read an invalid frame size of (?P<frame_size>[0-9-]*). Are you using TFramedTransport on the client side\?'),
-            convert(int, 'frame_size'),
+            #convert(int, 'frame_size'),
             update(event_product='cassandra', event_category='thrift', event_type='invalid_frame_size')),
 
        rule(
             capture(r'Invalid frame size got \((?P<frame_size>[0-9-]*)\), maximum expected (?P<max_frame_size>[0-9-]*)'),
-            convert(int, 'frame_size', 'max_frame_size'),
+            #convert(int, 'frame_size', 'max_frame_size'),
             update(event_product='cassandra', event_category='thrift', event_type='invalid_frame_size')),
 
        rule(
@@ -1108,7 +1108,7 @@ capture_message = switch((
 
        rule(
             capture(r'Unexpected exception during request; channel = \[id: (?P<channel_id>[^,]*), (?P<client_host>[^:]*):(?P<client_port>[0-9]*) (=>|:>) (?P<server_host>[^:]*):(?P<server_port>[0-9]*)\]'),
-            convert(int, 'client_port', 'server_port'),
+            #convert(int, 'client_port', 'server_port'),
             update(event_product='cassandra', event_category='native_protocol', event_type='request_exception')),
 
     case('ThriftServer'),
@@ -1123,14 +1123,14 @@ capture_message = switch((
 
        rule(
             capture(r'Binding thrift service to (?P<thrift_host>[^:]*):(?P<thrift_port>[0-9]*)'),
-            convert(int, 'thrift_port'),
+            #convert(int, 'thrift_port'),
             update(event_product='cassandra', event_category='thrift', event_type='bind_address')),
 
     case('Server'),
     
        rule(
             capture(r'Starting listening for CQL clients on (?P<native_host>[^:]*):(?P<native_port>[0-9]*)'),
-            convert(int, 'thrift_port'),
+            #convert(int, 'thrift_port'),
             update(event_product='cassandra', event_category='native_transport', event_type='start_listen')),
 
        rule(
@@ -1154,7 +1154,7 @@ capture_message = switch((
 
         rule(
             capture(r"[Ff]lushing high-traffic column family CFS\(Keyspace='(?P<keyspace>[^']*)', ColumnFamily='(?P<table>[^']*)'\) \(estimated (?P<estimated_bytes>[0-9]*) bytes\)"),
-            convert(int, 'estimated_bytes'),
+            #convert(int, 'estimated_bytes'),
             update(event_product='cassandra', event_category='memtable', event_type='metered_flush')),
         
     case('Validator', 'AntiEntropyService'),
@@ -1167,7 +1167,7 @@ capture_message = switch((
 
         rule(
             capture(r'Finished hinted handoff of (?P<rows>[0-9]*) rows to endpoint (?P<endpoint>.*)'),
-            convert(int, 'rows'),
+            #convert(int, 'rows'),
             update(event_product='cassandra', event_category='hinted_handoff', event_type='end_handoff')),
 
         rule(
@@ -1176,7 +1176,7 @@ capture_message = switch((
 
         rule(
             capture(r'Timed out replaying hints to (?P<endpoint>.*); aborting \((?P<hints_delivered>[0-9]*) delivered\)'),
-            convert(int, 'hints_delivered'),
+            #convert(int, 'hints_delivered'),
             update(event_product='cassandra', event_category='hinted_handoff', event_type='hint_timeout')),
 
         rule(
@@ -1195,7 +1195,7 @@ capture_message = switch((
 
         rule(
             capture(r'(?P<endpoint>[^ ]*) has (?P<hints_dropped>[0-9]*) dropped hints, because node is down past configured hint window.'),
-            convert(int, 'hints_dropped'),
+            #convert(int, 'hints_dropped'),
             update(event_product='cassandra', event_category='hinted_handoff', event_type='hints_dropped')),
 
     case('PluginLocator'),
@@ -1230,28 +1230,28 @@ capture_message = switch((
 
         rule(
             capture('(?P<metric>[^ ]*) plugin using (?P<async_writers>[0-9]*) async writers'),
-            convert(int, 'async_writers'),
+            #convert(int, 'async_writers'),
             update(event_product='dse', event_category='metric', event_type='async_writers')),
 
     case('SnapshotInfoBean'),
 
         rule(
             capture('(?P<metric>[^ ]) refresh rate set to (?P<new_refresh_rate>[0-9]*) \(was (?P<old_refresh_rate>[0-9]*)\)'),
-            convert(int, 'new_refresh_rate', 'old_refresh_rate'),
+            #convert(int, 'new_refresh_rate', 'old_refresh_rate'),
             update(event_product='dse', event_category='metric', event_type='refresh_rate_set')),
 
     case('ExplicitTTLSnapshotInfoBean'),
 
         rule(
             capture('Setting TTL to (?P<ttl>[0-9]*)'),
-            convert(int, 'ttl'),
+            #convert(int, 'ttl'),
             update(event_product='dse', event_category='metric', event_type='ttl_set')),
 
     case('AutoSavingCache'),
 
         rule(
             capture(r'Saved (?P<cache_type>[^ ]*) \((?P<cache_items>[0-9]*) items\) in (?P<save_duration>[0-9]*) ms'),
-            convert(int, 'cache_items', 'save_duration'),
+            #convert(int, 'cache_items', 'save_duration'),
             update(event_product='cassandra', event_category='cache', event_type='save')),
 
         rule(
@@ -1264,14 +1264,14 @@ capture_message = switch((
 
         rule(
             capture(r'Completed loading \((?P<load_duration>[0-9]*) ms; (?P<cache_items>[0-9]*) keys\) KeyCache cache'),
-            convert(int, 'load_duration', 'cache_items'),
+            #convert(int, 'load_duration', 'cache_items'),
             update(event_product='cassandra', event_category='cache', event_type='loaded')),
 
     case('CacheService'),
 
         rule(
             capture(r'Scheduling (?P<cache_type>[^ ]*) cache save to every (?P<save_interval>[0-9]*) seconds \(going to save (?P<keys_to_save>[^ ]*) keys\).'),
-            convert(int, 'save_interval'),
+            #convert(int, 'save_interval'),
             update(event_product='cassandra', event_category='cache', event_type='schedule_save')),
 
         rule(
@@ -1320,12 +1320,12 @@ capture_message = switch((
 
         rule(
             capture(r'Repair session (?P<session_id>[^\]]*) for range \((?P<range_begin>[^,]*),(?P<range_end>[^\]]*)\] finished'),
-            convert(int, 'range_begin', 'range_end'),
+            #convert(int, 'range_begin', 'range_end'),
             update(event_product='cassandra', event_category='repair', event_type='session_finished')),
 
         rule(
             capture(r'Repair session (?P<session_id>[^\]]*) for range \((?P<range_begin>[^,]*),(?P<range_end>[^\]]*)\] failed with error (?P<error>)'),
-            convert(int, 'range_begin', 'range_end'),
+            #convert(int, 'range_begin', 'range_end'),
             update(event_product='cassandra', event_category='repair', event_type='session_failure')),
 
         rule(
@@ -1334,7 +1334,7 @@ capture_message = switch((
 
         rule(
             capture(r'Starting repair command #(?P<command>[0-9]*), repairing (?P<ranges>[0-9]*) ranges for keyspace (?P<keyspace>.*)( \(parallelism=(?P<parallelism>[^,]), full=(?P<full>[^)])\))?'),
-            convert(int, 'command', 'ranges'),
+            #convert(int, 'command', 'ranges'),
             update(event_product='cassandra', event_category='repair', event_type='command_begin')),
 
         rule(
@@ -1405,7 +1405,7 @@ capture_message = switch((
 
         rule(
             capture(r'setstreamthroughput: throttle set to (?P<stream_throughput>[0-9]*)'),
-            convert(int, 'stream_throughput'),
+            #convert(int, 'stream_throughput'),
             update(event_product='cassandra', event_category='config', event_type='stream_throughput')),
 
         rule(
@@ -1424,17 +1424,17 @@ capture_message = switch((
 
         rule(
             capture(r'(?P<messages_dropped>[0-9]*) (?P<message_type>[^ ]*) messages dropped in last 5000ms(: (?P<internal_timeout>[0-9]*) for internal timeout and (?P<cross_node_timeout>[0-9]*) for cross node timeout)?'),
-            convert(int, 'messages_dropped', 'internal_timeout', 'cross_node_timeout'),
+            #convert(int, 'messages_dropped', 'internal_timeout', 'cross_node_timeout'),
             update(event_product='cassandra', event_category='status', event_type='messages_dropped')),
 
         rule(
             capture(r'(?P<message_type>[^ ]*) messages were dropped in last 5000 ms: (?P<internal_timeout>[0-9]*) for internal timeout and (?P<cross_node_timeout>[0-9]*) for cross node timeout'),
-            convert(int, 'internal_timeout', 'cross_node_timeout'),
+            #convert(int, 'internal_timeout', 'cross_node_timeout'),
             update(event_product='cassandra', event_category='status', event_type='messages_dropped')),
 
         rule(
             capture(r'Starting Messaging Service on port (?P<port>[0-9]*)'),
-            convert(int, 'port'),
+            #convert(int, 'port'),
             update(event_product='cassandra', event_category='startup', event_type='start_messaging_service')),
 
         rule(
@@ -1459,7 +1459,7 @@ capture_line = rule(
         r' *(?P<level>[A-Z]*) *\[(?P<thread_name>[^\]]*?)[:_-]?(?P<thread_id>[0-9]*)\] (?P<date>.{10} .{12}) *(?P<source_file>[^:]*):(?P<source_line>[0-9]*) - (?P<message>.*)',
         r' *(?P<level>[A-Z]*) \[(?P<thread_name>[^\]]*?)[:_-]?(?P<thread_id>[0-9]*)\] (?P<date>.{10} .{12}) (?P<source_file>[^ ]*) \(line (?P<source_line>[0-9]*)\) (?P<message>.*)'),
     convert(date('%Y-%m-%d %H:%M:%S,%f'), 'date'),
-    convert(int, 'source_line'),
+    #convert(int, 'source_line'),
     update_message,
     default(event_product='unknown', event_category='unknown', event_type='unknown'))
 

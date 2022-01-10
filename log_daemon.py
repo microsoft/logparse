@@ -77,27 +77,12 @@ try:
             for event in systemlog.parse_log(log):
                 date = int(datetime.datetime.timestamp(event['date']))
                 del event['date']
-                event['service'] = 'cassandra'
                 # send to fluentd
                 # saw errors in the mdsd.err logs so not sure
                 # try int so we don't have nano secs
-                logger.emit_with_time('app', date, event)
+                logger.emit_with_time('cassandra', date, event)
 
                 if event['event_type'] != 'unknown':
-                    # statsd
-                    dims = metric_identifier.copy()
-                    dims['Metric'] = event['event_type']
-                    dims['Dims'] = {
-                        "Tenant": tenant,
-                        'Product': event['event_product'],
-                        'Category': event['event_category'],
-                        "Role": role,
-                        "RoleInstance": role_instance,
-                        "Service": "cassandra",
-                    }
-
-                    stats.gauge(json.dumps(dims), 1)
-
                     # write to Java
                     d = dict({
                         'event_product': event['event_product'],

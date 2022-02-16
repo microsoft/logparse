@@ -1466,6 +1466,8 @@ capture_line = rule(
 def parse_log(lines, **extras):
     fields = None
     for line in lines:
+        if type(line) is bytes:
+            line = str(line, 'UTF-8')
         next_fields = capture_line(line)
         if next_fields is not None:
             if fields is not None:

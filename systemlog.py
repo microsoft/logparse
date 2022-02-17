@@ -1485,3 +1485,5 @@ def parse_log(lines, **extras):
                     fields['exception'].append(line)
                 else:
                     fields['exception'] = [line]
+    if fields is not None:
+        yield fields

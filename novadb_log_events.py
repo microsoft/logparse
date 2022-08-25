@@ -16,12 +16,12 @@ def create_table(connection):
         ); """
         cursor.execute(query)
 
-def replace(connection, event_product, event_category, event_type, event_date):
+def upsert(connection, event_product, event_category, event_type, event_date):
     try:
         with closing(connection.cursor()) as cursor:
-            query = """REPLACE INTO LogEvent(event_product, event_category, event_type, event_date)
-            VALUES (?, ?, ?, ?)"""
-            values=(event_product, event_category, event_type, event_date)
+            query = """INSERT INTO LogEvent(event_product, event_category, event_type, event_date)
+            VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?"""
+            values=(event_product, event_category, event_type, event_date, event_date)
             cursor.execute(query, values)
             connection.commit()
     except Error as e:

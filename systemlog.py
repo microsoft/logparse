@@ -9,11 +9,7 @@ def fix_solr_exception(fields):
 
 capture_message = switch((
 
-    case('CassandraDaemon'), 
-       rule(
-            capture(r'^Exception encountered during startup\s*java.lang.RuntimeException: A node with address.*already exists, cancelling join. Use cassandra.replace_address if you want to replace this node.'),
-            update(event_product='cassandra', event_category='startup', event_type='ip_address_conflict')),
-
+    case('CassandraDaemon'),
        rule(
             capture(r'Startup complete'), 
             update(event_product='cassandra', event_category='startup', event_type='startup_complete')),

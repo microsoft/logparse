@@ -6,8 +6,8 @@ from contextlib import closing
 
 # set up statsd
 stats = statsd.StatsClient('localhost', 8125)
-account_name = os.getenv("MONITORING_GCS_ACCOUNT");
-namespace = os.getenv("MONITORING_GCS_NAMESPACE");
+account_name = os.getenv("MONITORING_MDM_ACCOUNT");
+namespace = os.getenv("MONITORING_MDM_NAMESPACE");
 tenant = os.getenv("MONITORING_TENANT");
 role = os.getenv("MONITORING_ROLE");
 role_instance = os.getenv("MONITORING_ROLE_INSTANCE");
@@ -35,28 +35,28 @@ def upsert(connection, event_product, event_category, event_type, event_date):
     success = False
     retry_attempt = 0
     max_retry_attempts = 5
-
-    while not success and retry_attempt < max_retry_attempts:
-        try:
-            with closing(connection.cursor()) as cursor:
-                query = """INSERT INTO LogEvent(event_product, event_category, event_type, event_date)
-                VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?"""
-                values = (event_product, event_category, event_type, event_date, event_date)
+    
+    with closing(connection.cursor()) as cursor:
+        query = """INSERT INTO LogEvent(event_product, event_category, event_type, event_date)
+        VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?"""
+        values = (event_product, event_category, event_type, event_date, event_date)
+        
+        while not success and retry_attempt < max_retry_attempts:
+            try:
                 cursor.execute(query, values)
                 connection.commit()
                 success = True
-        except sqlite3.Error as e:
-            print("Error occurred while replacing log event {0}, {1}, {2}, {3}: {4}. Retrying".format(event_product, event_category, event_type, event_date, str(e)))
-            connection.rollback()
-            success = False
-            retry_attempt += 1
-    
-    if retry_attempt == max_retry_attempts:
-        print("Emitting metrics for upsert error")
-        emit_metrics(event_product, event_category, event_type, event_date)
+            except sqlite3.Error as e:
+                print("Error occurred while replacing log event {0}, {1}, {2}, {3}: {4}. Retrying".format(event_product, event_category, event_type, event_date, str(e)))
+                connection.rollback()
+                success = False
+                retry_attempt += 1
+        
+        if retry_attempt == max_retry_attempts:
+            print("Emitting metrics for upsert error")
+            emit_metrics(event_product, event_category, event_type, event_date)
 
 def emit_metrics(event_product, event_category, event_type, event_date):
-    # statsd
     dims = metric_identifier.copy()
     dims['Metric'] = "UpsertLogEventError"
     dims['Dims'] = {
@@ -104,5 +104,4 @@ def main():
                 print(row)
 
 if __name__ == '__main__':
-
     main()

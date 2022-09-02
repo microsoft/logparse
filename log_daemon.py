@@ -19,6 +19,6 @@ try:
             if path.exists('/var/log/cassandra/debug.log'):
                 log = Pygtail('/var/log/cassandra/debug.log')
                 for event in systemlog.parse_log(log):
-                    novadb_log_events.upsert(conn, event["event_product"], event["event_category"], event["event_type"], event['date'])
+                    novadb_log_events.upsert(conn, event["event_product"], event["event_category"], event["event_type"], str(event['date']))
 finally:
     print("Log parsing stopped")

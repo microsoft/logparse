@@ -11,6 +11,10 @@ capture_message = switch((
 
     case('CassandraDaemon'),
        rule(
+            capture(r'Exception encountered during startup\njava.lang.RuntimeException: A node with address .* already exists, cancelling join. Use cassandra.replace_address if you want to replace this node.'), 
+            update(event_product='cassandra', event_category='startup', event_type='startup_complete')),
+
+       rule(
             capture(r'Startup complete'), 
             update(event_product='cassandra', event_category='startup', event_type='startup_complete')),
 

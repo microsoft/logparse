@@ -17,11 +17,13 @@ from pygtail import Pygtail
 # set up fluent
 logger = sender.FluentSender('nova', port=25234)
 
+log_file = '/var/log/cassandra/system.log'
+
 try:
     with closing(novadb_log_events.init()) as conn:
         while True:
-            if path.exists('/var/log/cassandra/debug.log'):
-                log = Pygtail('/var/log/cassandra/debug.log')
+            if path.exists(log_file):
+                log = Pygtail(log_file)
                 for event in systemlog.parse_log(log):
                     event_date = event['date']
                     event_date_timestamp = int(datetime.datetime.timestamp(event_date))

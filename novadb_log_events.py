@@ -1,7 +1,12 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+
+# Utility methods to deal with log events in DB.
+
 import json
 import os
 import sqlite3
 import statsd
+import time
 from contextlib import closing
 
 # set up statsd
@@ -51,10 +56,11 @@ def upsert(connection, event_product, event_category, event_type, event_date):
                 connection.rollback()
                 success = False
                 retry_attempt += 1
-        
-        if retry_attempt == max_retry_attempts:
-            print("Emitting metrics for upsert error")
-            emit_metrics(event_product, event_category, event_type, event_date)
+                if retry_attempt == max_retry_attempts:
+                    print("Emitting metrics for upsert error")
+                    emit_metrics(event_product, event_category, event_type, event_date)
+                else:
+                    time.sleep(1)
 
 def emit_metrics(event_product, event_category, event_type, event_date):
     dims = metric_identifier.copy()
@@ -85,7 +91,7 @@ def emit_metrics(event_product, event_category, event_type, event_date):
         print("Error writing out metrics to local file system: " + str(e))
 
 def init():
-    database_file = r"/var/lib/cassandra/nova/novautil.db"
+    database_file = r"/var/lib/cassandra/nova/logevents.db"
 
     connection = create_connection(database_file)
     create_table(connection)

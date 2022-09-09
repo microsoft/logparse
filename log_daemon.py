@@ -10,8 +10,12 @@ import os
 import systemlog
 
 from contextlib import closing
+from fluent import sender
 from os import path
 from pygtail import Pygtail
+
+# set up fluent
+logger = sender.FluentSender('nova', port=25234)
 
 try:
     with closing(novadb_log_events.init()) as conn:
@@ -19,6 +23,13 @@ try:
             if path.exists('/var/log/cassandra/debug.log'):
                 log = Pygtail('/var/log/cassandra/debug.log')
                 for event in systemlog.parse_log(log):
-                    novadb_log_events.upsert(conn, event["event_product"], event["event_category"], event["event_type"], str(event['date']))
+                    event_date = event['date']
+                    event_date_timestamp = int(datetime.datetime.timestamp(event_date))
+                    del event['date']
+                    # send to fluentd
+                    # saw errors in the mdsd.err logs so not sure
+                    # try int so we don't have nano secs
+                    logger.emit_with_time('cassandra', event_date_timestamp, event)
+                    novadb_log_events.upsert(conn, event["event_product"], event["event_category"], event["event_type"], str(event_date))
 finally:
     print("Log parsing stopped")

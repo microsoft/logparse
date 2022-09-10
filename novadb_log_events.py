@@ -36,33 +36,32 @@ def create_table(connection):
         ); """
         cursor.execute(query)
 
-def upsert(connection, event_product, event_category, event_type, event_date):
+def upsert(cursor, event_product, event_category, event_type, event_date):
     success = False
     retry_attempt = 0
     max_retry_attempts = 5
-    
-    with closing(connection.cursor()) as cursor:
-        query = """INSERT INTO LogEvent(event_product, event_category, event_type, event_date)
-        VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?"""
-        values = (event_product, event_category, event_type, event_date, event_date)
-        
-        while not success and retry_attempt < max_retry_attempts:
-            try:
-                cursor.execute(query, values)
-                connection.commit()
-                success = True
-            except sqlite3.Error as e:
-                print("Error occurred while replacing log event {0}, {1}, {2}, {3}: {4}. Retrying".format(event_product, event_category, event_type, event_date, str(e)))
-                connection.rollback()
-                success = False
-                retry_attempt += 1
-                if retry_attempt == max_retry_attempts:
-                    print("Emitting metrics for upsert error")
-                    emit_metrics(event_product, event_category, event_type, event_date)
-                else:
-                    time.sleep(1)
 
-def emit_metrics(event_product, event_category, event_type, event_date):
+    query = """INSERT INTO LogEvent(event_product, event_category, event_type, event_date)
+    VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?"""
+    values = (event_product, event_category, event_type, event_date, event_date)
+    
+    while not success and retry_attempt < max_retry_attempts:
+        try:
+            cursor.execute(query, values)
+            connection.commit()
+            success = True
+        except sqlite3.Error as e:
+            print("Error occurred while upserting log event {0}, {1}, {2}, {3}: {4}. Retrying".format(event_product, event_category, event_type, event_date, str(e)))
+            connection.rollback()
+            success = False
+            retry_attempt += 1
+            if retry_attempt == max_retry_attempts:
+                print("Emitting metrics for upsert error")
+                emit_metrics(event_product, event_category, event_type, event_date)
+            else:
+                time.sleep(1)
+
+def emit_upsert_error_metrics(event_product, event_category, event_type, event_date):
     dims = metric_identifier.copy()
     dims['Metric'] = "UpsertLogEventError"
     dims['Dims'] = {
@@ -76,19 +75,47 @@ def emit_metrics(event_product, event_category, event_type, event_date):
         "Service": "cassandra",
     }
 
-    try:
-        stats.gauge(json.dumps(dims), 1)
-    except Exception as e:
-        print("Error emitting metrics: " + str(e))
+    emit_metrics(dims)
 
-    # Dump metrics into local filesystem too
+    emit_metrics_to_file(dims, '/var/log/logevents_upsert_error_metrics_new.json', '/var/log/logevents_upsert_error_metrics.json')
+
+def emit_commit_error_metrics(event_product, event_category, event_type, event_date):
+    dims = metric_identifier.copy()
+    dims['Metric'] = "CommitLogEventsError"
+    dims['Dims'] = {
+        'Tenant': tenant,
+        "Role": role,
+        "RoleInstance": role_instance,
+        "Service": "cassandra",
+    }
+
+    emit_metrics(dims)
+
+    emit_metrics_to_file(dims, '/var/log/logevents_commit_error_metrics_new.json', '/var/log/logevents_commit_error_metrics.json')
+
+def emit_metrics(dims):
+    jsonDims = None
     try:
-        with open('/var/log/log_parse_error_metrics_new.json', 'w+') as f:
+        jsonDims = json.dumps(dims)
+        stats.gauge(jsonDims, 1)
+    except Exception as e:
+        print("Error emitting metrics " + jsonDims + ": " + str(e))
+
+def emit_metrics_to_file(dims, src, dst)
+    # Dump metrics into local filesystem
+    try:
+        # Make a copy of destination file if it already exists
+        if os.path.exists(dst):
+            shutil.copyfile(dst, src)
+        
+        # Append to it and rename it as the destination file
+        with open(src, 'a+') as f:
             f.write(json.dumps(dims))
             f.close()
-            os.rename(f.name, '/var/log/log_parse_error_metrics.json')
+            os.rename(f.name, dst)
+
     except Exception as e:
-        print("Error writing out metrics to local file system: " + str(e))
+        print("Error writing out metrics to file "+ dst +": " + str(e))
 
 def init():
     database_file = r"/var/lib/cassandra/nova/logevents.db"

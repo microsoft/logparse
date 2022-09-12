@@ -4,6 +4,7 @@
 
 import json
 import os
+import shutil
 import sqlite3
 import statsd
 import time
@@ -37,49 +38,13 @@ def create_table(connection):
         cursor.execute(query)
 
 def upsert(connection, cursor, event_product, event_category, event_type, event_date):
-    success = False
-    retry_attempt = 0
-    max_retry_attempts = 5
-
     query = """INSERT INTO LogEvent(event_product, event_category, event_type, event_date)
     VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?"""
     values = (event_product, event_category, event_type, event_date, event_date)
-    
-    while not success and retry_attempt < max_retry_attempts:
-        try:
-            cursor.execute(query, values)
-            connection.commit()
-            success = True
-        except sqlite3.Error as e:
-            print("Error occurred while upserting log event {0}, {1}, {2}, {3}: {4}. Retrying".format(event_product, event_category, event_type, event_date, str(e)))
-            connection.rollback()
-            success = False
-            retry_attempt += 1
-            if retry_attempt == max_retry_attempts:
-                print("Emitting metrics for upsert error")
-                emit_upsert_error_metrics(event_product, event_category, event_type, event_date)
-            else:
-                time.sleep(1)
+ 
+     cursor.execute(query, values)
 
-def emit_upsert_error_metrics(event_product, event_category, event_type, event_date):
-    dims = metric_identifier.copy()
-    dims['Metric'] = "UpsertLogEventError"
-    dims['Dims'] = {
-        'Tenant': tenant,
-        'EventProduct': event_product,
-        'EventCategory': event_category,
-        'EventType': event_type,
-        'EventDate': event_date,
-        "Role": role,
-        "RoleInstance": role_instance,
-        "Service": "cassandra",
-    }
-
-    emit_metrics(dims)
-
-    emit_metrics_to_file(dims, '/var/log/logevents_upsert_error_metrics_new.json', '/var/log/logevents_upsert_error_metrics.json')
-
-def emit_commit_error_metrics(event_product, event_category, event_type, event_date):
+def emit_commit_error_metrics():
     dims = metric_identifier.copy()
     dims['Metric'] = "CommitLogEventsError"
     dims['Dims'] = {

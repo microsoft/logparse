@@ -42,7 +42,7 @@ def upsert(connection, cursor, event_product, event_category, event_type, event_
     VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?"""
     values = (event_product, event_category, event_type, event_date, event_date)
  
-     cursor.execute(query, values)
+    cursor.execute(query, values)
 
 def emit_commit_error_metrics():
     dims = metric_identifier.copy()

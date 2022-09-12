@@ -36,7 +36,7 @@ def create_table(connection):
         ); """
         cursor.execute(query)
 
-def upsert(cursor, event_product, event_category, event_type, event_date):
+def upsert(connection, cursor, event_product, event_category, event_type, event_date):
     success = False
     retry_attempt = 0
     max_retry_attempts = 5
@@ -57,7 +57,7 @@ def upsert(cursor, event_product, event_category, event_type, event_date):
             retry_attempt += 1
             if retry_attempt == max_retry_attempts:
                 print("Emitting metrics for upsert error")
-                emit_metrics(event_product, event_category, event_type, event_date)
+                emit_upsert_error_metrics(event_product, event_category, event_type, event_date)
             else:
                 time.sleep(1)
 
@@ -101,7 +101,7 @@ def emit_metrics(dims):
     except Exception as e:
         print("Error emitting metrics " + jsonDims + ": " + str(e))
 
-def emit_metrics_to_file(dims, src, dst)
+def emit_metrics_to_file(dims, src, dst):
     # Dump metrics into local filesystem
     try:
         # Make a copy of destination file if it already exists

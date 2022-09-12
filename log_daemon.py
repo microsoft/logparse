@@ -8,6 +8,7 @@ import datetime
 import novadb_log_events
 import os
 import re
+import sqlite3
 import systemlog
 
 from contextlib import closing
@@ -21,7 +22,7 @@ logger = sender.FluentSender('nova', port=25234)
 log_file = '/var/log/cassandra/system.log'
 
 try:
-    with closing(novadb_log_events.init()) as conn:
+    with closing(novadb_log_events.init()) as connection:
         with closing(connection.cursor()) as cursor:
             while True:
                 if path.exists(log_file):
@@ -45,7 +46,7 @@ try:
                                 # try int so we don't have nano secs
                                 logger.emit_with_time('cassandra', event_date_timestamp, event)
                                 
-                                novadb_log_events.upsert(cursor, event["event_product"], event["event_category"], event["event_type"], str(event_date))       
+                                novadb_log_events.upsert(connection, cursor, event["event_product"], event["event_category"], event["event_type"], str(event_date))       
                         
                             connection.commit()
                             success = True

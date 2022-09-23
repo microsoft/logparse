@@ -22,10 +22,10 @@ try:
     with closing(novadb_log_events.init()) as connection:
         while True:
             if path.exists(log_file):
-                lines = Pygtail(log_file)
+                lines = Pygtail(log_file) # Fetch log lines
 
             events = dict()
-            for parsed_logline_map in systemlog.parse_log(lines): # Processes the log lines, and outputs it as a map of fields of interest
+            for parsed_logline_map in systemlog.parse_log(lines): # Processes the log lines, and outputs it as a map of fields
                 # Emit the parsed line to Geneva
                 timestamp = datetime.datetime.timestamp(parsed_logline_map["date"])
                 parsed_logline_map["date"] = str(parsed_logline_map["date"]) # If not converted to string, fluentd throws a serialization error for datetime object

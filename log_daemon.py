@@ -2,15 +2,11 @@
 
 # Copyright (c) Microsoft Corporation. All rights reserved.
 
-# Parses cassandra log files and stores them in sqlite DB.
+# Processes cassandra log, emits it to Geneva, and stores log events in durable storage.
 
 import datetime
 import novadb_log_events
-import os
-import re
-import sqlite3
 import systemlog
-import time
 
 from contextlib import closing
 from fluent import sender
@@ -18,51 +14,28 @@ from os import path
 from pygtail import Pygtail
 
 # set up fluent
-logger = sender.FluentSender('nova', port=25234)
+logger = sender.FluentSender('nova', port=25234, nanosecond_precision=True)
 
 log_file = '/var/log/cassandra/system.log'
 
 try:
     with closing(novadb_log_events.init()) as connection:
-            while True:
-                if path.exists(log_file):
-                    lines = Pygtail(log_file)
-                    success = False
-                    retry_attempt = 0
-                    max_retry_attempts = 5
-                    while not success and retry_attempt < max_retry_attempts:
-                        with closing(connection.cursor()) as cursor:
-                            start_time_events = None
-                            end_time_events = None
-                            try:
-                                for event in systemlog.parse_log(lines):
-                                    event_date = event['date']
-                                    # send to fluentd
-                                    if retry_attempt == 0:
-                                        # saw errors in the mdsd.err logs so not sure
-                                        # try int so we don't have nano secs
-                                        event_date_timestamp = int(datetime.datetime.timestamp(event_date))
-                                        del event['date']
-                                        logger.emit_with_time('cassandra', event_date_timestamp, event)
+        while True:
+            if path.exists(log_file):
+                lines = Pygtail(log_file)
 
-                                    if start_time_events is None:
-                                        start_time_events = str(event_date)
-                                    end_time_events = str(event_date)  
-                                    novadb_log_events.upsert(connection, cursor, event["event_product"], event["event_category"], event["event_type"], str(event_date))       
-                            
-                                connection.commit()
-                                success = True
+            events = dict()
+            for parsed_logline_map in systemlog.parse_log(lines): # Processes the log lines, and outputs it as a map of fields of interest
+                # Emit the parsed line to Geneva
+                timestamp = datetime.datetime.timestamp(parsed_logline_map["date"])
+                parsed_logline_map["date"] = str(parsed_logline_map["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
+                logger.emit_with_time('cassandra', timestamp, parsed_logline_map)
 
-                            except sqlite3.Error as e:
-                                print("Error occurred while comitting log events between {0} and {1}. Retrying: {2}".format(start_time_events, end_time_events, str(e)))
-                                connection.rollback()
-                                success = False
-                                retry_attempt += 1
-                                if retry_attempt == max_retry_attempts:
-                                    print("Emitting metrics for commit error")
-                                    novadb_log_events.emit_commit_error_metrics()
-                                else:
-                                    time.sleep(1)
+                # Add the parsed line to a map, which will be iterated over later, and stored persistently in the DB
+                if parsed_logline_map['event_type'] != 'unknown':
+                    key = "{0}:{1}:{2}".format(parsed_logline_map["event_product"], parsed_logline_map["event_category"], parsed_logline_map["event_type"])
+                    events[key] = parsed_logline_map
 
+            novadb_log_events.upsert_events(connection, events)
 finally:
     print("Log parsing stopped")

@@ -8,6 +8,7 @@ import shutil
 import sqlite3
 import statsd
 import time
+
 from contextlib import closing
 
 # set up statsd
@@ -36,6 +37,35 @@ def create_table(connection):
             PRIMARY KEY(event_product, event_category, event_type)
         ); """
         cursor.execute(query)
+
+
+def upsert_events(connection, events_map):
+    '''
+    Values of the events_map are upserted into the DB as part of a single transaction,
+    and committed at the end, to minimize disk I/O.
+    '''
+    success = False
+    retry_attempt = 0
+    max_retry_attempts = 5
+    while not success and retry_attempt < max_retry_attempts:
+        with closing(connection.cursor()) as cursor:
+            try:
+                for event in events_map.values():
+                    upsert(connection, cursor, event["event_product"], event["event_category"], event["event_type"], event["date"])       
+                
+                connection.commit()
+                success = True
+
+            except sqlite3.Error as e:
+                print("Error occurred while comitting log events {0}. Retrying: {1}".format(str(events_map), str(e)))
+                connection.rollback()
+                success = False
+                retry_attempt += 1
+                if retry_attempt == max_retry_attempts:
+                    print("Emitting metrics for commit error")
+                    emit_commit_error_metrics()
+                else:
+                    time.sleep(1)
 
 def upsert(connection, cursor, event_product, event_category, event_type, event_date):
     query = """INSERT INTO LogEvent(event_product, event_category, event_type, event_date)

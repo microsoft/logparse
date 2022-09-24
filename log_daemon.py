@@ -25,16 +25,16 @@ try:
                 lines = Pygtail(log_file) # Fetch log lines
 
             events = dict()
-            for parsed_logline_map in systemlog.parse_log(lines): # Processes the log lines, and outputs it as a map of fields
-                # Emit the parsed line to Geneva
-                timestamp = datetime.datetime.timestamp(parsed_logline_map["date"])
-                parsed_logline_map["date"] = str(parsed_logline_map["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
-                logger.emit_with_time('cassandra', timestamp, parsed_logline_map)
+            for parsed_line in systemlog.parse_log(lines): # Processes each log line, and outputs it as a map of fields
+                # Emit the parsed log to Geneva
+                timestamp = datetime.datetime.timestamp(parsed_line["date"])
+                parsed_line["date"] = str(parsed_line["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
+                logger.emit_with_time('cassandra', timestamp, parsed_line)
 
-                # Add the parsed line to a map, which will be iterated over later, and stored persistently in the DB
-                if parsed_logline_map['event_type'] != 'unknown':
-                    key = "{0}:{1}:{2}".format(parsed_logline_map["event_product"], parsed_logline_map["event_category"], parsed_logline_map["event_type"])
-                    events[key] = parsed_logline_map
+                # Add the parsed log to a map, which will be iterated over later, and stored persistently in the DB
+                if parsed_line['event_type'] != 'unknown':
+                    key = "{0}:{1}:{2}".format(parsed_line["event_product"], parsed_line["event_category"], parsed_line["event_type"])
+                    events[key] = parsed_line
 
             novadb_log_events.upsert_events(connection, events)
 finally:

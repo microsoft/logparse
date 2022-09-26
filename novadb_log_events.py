@@ -38,7 +38,6 @@ def create_table(connection):
         ); """
         cursor.execute(query)
 
-
 def upsert_events(connection, events_map):
     '''
     Values of the events_map are upserted into the DB as part of a single transaction,
@@ -116,6 +115,8 @@ def init():
     database_file = r"/var/lib/cassandra/nova/logevents.db"
 
     connection = create_connection(database_file)
+    connection.execute('pragma journal_mode=wal')
+
     create_table(connection)
 
     return connection

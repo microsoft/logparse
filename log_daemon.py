@@ -7,6 +7,7 @@
 import datetime
 import novadb_log_events
 import systemlog
+import time
 
 from contextlib import closing
 from fluent import sender
@@ -17,12 +18,17 @@ from pygtail import Pygtail
 logger = sender.FluentSender('nova', port=25234, nanosecond_precision=True)
 
 log_file = '/var/log/cassandra/system.log'
+sleep_time = 5
 
 try:
     with closing(novadb_log_events.init()) as connection:
         while True:
-            if path.exists(log_file):
-                lines = Pygtail(log_file) # Fetch log lines
+            if not path.exists(log_file):
+                print("Log file {0} does not exist. Going to sleep for {1} seconds".format(log_file, sleep_time))
+                time.sleep(sleep_time)
+                continue 
+                
+            lines = Pygtail(log_file) # Fetch log lines
 
             events = dict()
             for parsed_line in systemlog.parse_log(lines): # Processes each log line, and outputs it as a map of fields

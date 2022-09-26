@@ -18,7 +18,7 @@ from pygtail import Pygtail
 logger = sender.FluentSender('nova', port=25234, nanosecond_precision=True)
 
 log_file = '/var/log/cassandra/system.log'
-sleep_time = 5
+sleep_time = 5 # in seconds
 
 try:
     with closing(novadb_log_events.init()) as connection:

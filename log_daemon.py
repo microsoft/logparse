@@ -14,11 +14,11 @@ from fluent import sender
 from os import path
 from pygtail import Pygtail
 
-# set up fluent
+# Set up fluent
 logger = sender.FluentSender('nova', port=25234, nanosecond_precision=True)
 
 log_file = '/var/log/cassandra/system.log'
-sleep_time = 5 # in seconds
+sleep_time = 5 # Sleep time in seconds
 
 try:
     with closing(novadb_log_events.init()) as connection:

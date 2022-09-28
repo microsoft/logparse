@@ -2,108 +2,46 @@
 
 # Copyright (c) Microsoft Corporation. All rights reserved.
 
-# Parses cassandra log files and emits them to fluentd, statsd, and sidecar
+# Processes cassandra log, emits it to Geneva, and stores log events in durable storage.
 
-import json
-from fluent import sender
-from os import path
-import os
-import sys
-from pygtail import Pygtail
+import datetime
+import novadb_log_events
 import systemlog
 import time
-import statsd
-from queue import Queue
-from threading import Thread
-import datetime
 
-# set up fluent
-logger = sender.FluentSender('nova', port=25234)
+from contextlib import closing
+from fluent import sender
+from os import path
+from pygtail import Pygtail
 
-# set up statsd
-stats = statsd.StatsClient('localhost', 8125)
-account_name = os.getenv("MONITORING_GCS_ACCOUNT");
-namespace = os.getenv("MONITORING_GCS_NAMESPACE");
-tenant = os.getenv("MONITORING_TENANT");
-role = os.getenv("MONITORING_ROLE");
-role_instance = os.getenv("MONITORING_ROLE_INSTANCE");
+# Set up fluent
+logger = sender.FluentSender('nova', port=25234, nanosecond_precision=True)
 
-metric_identifier = {
-    "Account": account_name,
-    "Namespace": namespace,
-}
-
-# set up Java
-q = Queue()
-if len(sys.argv) > 1:
-    PIPE = sys.argv[1]
-else:
-    print("Usage: %s <pipe>" % sys.argv[0])
-    sys.exit(1)
+log_file = '/var/log/cassandra/system.log'
+sleep_time = 5 # Sleep time in seconds
 
 try:
-    os.mkfifo(PIPE)
-except OSError as e:
-    print("Failed to create FIFO: %s" % e)
+    with closing(novadb_log_events.init()) as connection:
+        while True:
+            if not path.exists(log_file):
+                print("Log file {0} does not exist. Going to sleep for {1} seconds".format(log_file, sleep_time))
+                time.sleep(sleep_time)
+                continue 
+                
+            lines = Pygtail(log_file) # Fetch log lines
 
-cancel = False
+            events = dict()
+            for parsed_line in systemlog.parse_log(lines): # Processes each log line, and outputs it as a map of fields
+                # Emit the parsed log to Geneva
+                timestamp = datetime.datetime.timestamp(parsed_line["date"])
+                parsed_line["date"] = str(parsed_line["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
+                logger.emit_with_time('cassandra', timestamp, parsed_line)
 
+                # Add the parsed log to a map, which will be iterated over later, and stored persistently in the DB
+                if parsed_line['event_type'] != 'unknown':
+                    key = "{0}:{1}:{2}".format(parsed_line["event_product"], parsed_line["event_category"], parsed_line["event_type"])
+                    events[key] = parsed_line
 
-# use a background thread to write to the pipe
-# since it's blocking
-def writeToPipe():
-    with open(PIPE, 'w') as fifo:
-        flush_time = time.time()
-        # process until canceled and queue is empty
-        while not (cancel and q.empty()):
-            data = q.get()
-            if not data.get('terminate', False):
-                fifo.write(json.dumps(data) + "\n")
-                # flush every 10s
-                if (flush_time + 10 < time.time()) or (q.empty()):
-                    fifo.flush()
-                    flush_time = time.time()
-            q.task_done()
-
-
-t = Thread(target=writeToPipe)
-t.daemon = True
-t.start()
-
-try:
-    while True:
-        if path.exists('/var/log/cassandra/system.log'):
-            log = Pygtail('/var/log/cassandra/system.log')
-            for event in systemlog.parse_log(log):
-                date = int(datetime.datetime.timestamp(event['date']))
-                del event['date']
-                # send to fluentd
-                # saw errors in the mdsd.err logs so not sure
-                # try int so we don't have nano secs
-                logger.emit_with_time('cassandra', date, event)
-
-                if event['event_type'] != 'unknown':
-                    # write to Java
-                    d = dict({
-                        'event_product': event['event_product'],
-                        'event_type': event['event_type'],
-                        'event_category': event['event_category'],
-                        'event_date': date
-                    })
-                    q.put(d)
-
-        # sleep for the next round
-        time.sleep(10)  # 10s
-
-# on exit
+            novadb_log_events.upsert_events(connection, events)
 finally:
-    cancel = True
-    # wake up thread
-    q.put(dict({'terminate': 'True'}))
-    # there is a way to wait until tall items are procesed
-    # but we want to have a timeout since systemd will get antsy
-    # so use join on thread instead of the queue
-    t.join(60)
-
-    # close fluentd
-    logger.close()
+    print("Log parsing stopped")

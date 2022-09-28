@@ -9,7 +9,10 @@ def fix_solr_exception(fields):
 
 capture_message = switch((
 
-    case('CassandraDaemon'), 
+    case('CassandraDaemon'),
+       rule(
+            capture(r'Startup complete'), 
+            update(event_product='cassandra', event_category='startup', event_type='startup_complete')),
 
         rule(
             capture(r'Logging initialized'), 

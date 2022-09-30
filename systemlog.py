@@ -1484,6 +1484,26 @@ def parse_log(lines, **extras):
                 if 'exception' in fields:
                     fields['exception'].append(line)
                 else:
-                    fields['exception'] = [line]
+                    fields['exception'] = [line]            
+                process_exception(line, fields)
+                
     if fields is not None:
         yield fields
+
+capture_exception = switch((
+    case('Exception encountered during startup'),
+       rule(
+            capture(r'java.lang.RuntimeException: A node with address (?P<endpoint>[^ ]*) already exists, cancelling join'), 
+            update(event_product='cassandra', event_category='startup', event_type='ip_address_conflict'))))
+
+def process_exception(line, fields):
+    '''
+    Looks for known patterns in the line of an exception stack trace, and updates the fields accordingly
+    '''
+    if not fields:
+        return
+    
+    subfields = capture_exception(fields['message'], line)
+    if subfields is not None:
+        fields.update(subfields)
+

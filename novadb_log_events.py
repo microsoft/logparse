@@ -8,6 +8,7 @@ import shutil
 import sqlite3
 import statsd
 import time
+import traceback
 
 from contextlib import closing
 
@@ -34,6 +35,7 @@ def create_table(connection):
             event_category text,
             event_type text,
             event_date text,
+            attributes text,
             PRIMARY KEY(event_product, event_category, event_type)
         ); """
         cursor.execute(query)
@@ -50,7 +52,8 @@ def upsert_events(connection, events_map):
         with closing(connection.cursor()) as cursor:
             try:
                 for event in events_map.values():
-                    upsert(connection, cursor, event["event_product"], event["event_category"], event["event_type"], event["date"])       
+                    attributes = get_attributes(event)
+                    upsert(connection, cursor, event["event_product"], event["event_category"], event["event_type"], event["date"], attributes)       
                 
                 connection.commit()
                 success = True
@@ -66,10 +69,30 @@ def upsert_events(connection, events_map):
                 else:
                     time.sleep(1)
 
-def upsert(connection, cursor, event_product, event_category, event_type, event_date):
+def get_attributes(event):
+    attributes = {}
+
+    try:
+        if event["event_category"] == 'startup':
+            if event["event_type"] == 'ip_address_conflict':
+                attributes = {"endpoint": event["endpoint"]}
+
+        if event["event_category"] == 'tombstone':
+            if event["event_type"] == 'warning_threshold_exceeded':
+                attributes = {"tombstoned_cells": event["tombstoned_cells"], "keyspace": event["keyspace"], "table": event["table"]}
+
+            if event["event_type"] == 'error_threshold_exceeded':
+                attributes = {"live_cells": event['live_cells'], "tombstoned_cells": event['tombstoned_cells'], "keyspace": event['keyspace'], "table": event['table'], "key": event['key'], "requested_columns": event['requested_columns'], slice_start: event['slice_start'], "slice_end": event['slice_end'], "deletion_info": event['deletion_info']}
+    except:
+        ex = traceback.format_exc()
+        print("get_attributes: exception encountered - " + ex)
+        
+    return json.dumps(attributes)
+
+def upsert(connection, cursor, event_product, event_category, event_type, event_date, attributes):
     query = """INSERT INTO LogEvent(event_product, event_category, event_type, event_date)
-    VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?"""
-    values = (event_product, event_category, event_type, event_date, event_date)
+    VALUES (?, ?, ?, ?) ON CONFLICT(event_product, event_category, event_type) DO UPDATE set event_date=?, attributes=?"""
+    values = (event_product, event_category, event_type, event_date, event_date, attributes)
  
     cursor.execute(query, values)
 

@@ -31,7 +31,9 @@ try:
             lines = Pygtail(log_file) # Fetch log lines
 
             events = dict()
+            num_lines = 0
             for parsed_line in systemlog.parse_log(lines): # Processes each log line, and outputs it as a map of fields
+                num_lines += 1
                 # Emit the parsed log to Geneva
                 timestamp = datetime.datetime.timestamp(parsed_line["date"])
                 parsed_line["date"] = str(parsed_line["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
@@ -41,6 +43,11 @@ try:
                 if parsed_line['event_type'] != 'unknown':
                     key = "{0}:{1}:{2}".format(parsed_line["event_product"], parsed_line["event_category"], parsed_line["event_type"])
                     events[key] = parsed_line
+
+            if num_lines == 0:
+                # This is to keep Pygtail from consuming >99% CPU
+                time.sleep(1)
+                continue
 
             novadb_log_events.upsert_events(connection, events)
 finally:

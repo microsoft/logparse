@@ -12,13 +12,16 @@ import time
 from contextlib import closing
 from fluent import sender
 from os import path
+from os import environ
 from pygtail import Pygtail
+
 
 # Set up fluent
 logger = sender.FluentSender('nova', port=25234, nanosecond_precision=True)
 
 log_file = '/var/log/cassandra/system.log'
 sleep_time = 5 # Sleep time in seconds
+address = environ.get('ADDRESS')
 
 try:
     with closing(novadb_log_events.init()) as connection:
@@ -37,6 +40,7 @@ try:
                 # Emit the parsed log to Geneva
                 timestamp = datetime.datetime.timestamp(parsed_line["date"])
                 parsed_line["date"] = str(parsed_line["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
+                parsed_line["address"] = address
                 logger.emit_with_time('cassandra', timestamp, parsed_line)
 
                 # Add the parsed log to a map, which will be iterated over later, and stored persistently in the DB

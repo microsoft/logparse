@@ -1486,8 +1486,12 @@ def parse_log(lines, **extras):
                 else:
                     fields['exception'] = [line]            
                 process_exception(line, fields)
-                
+
+    # process the last line
     if fields is not None:
+        fields.update(extras)
+        if 'exception' in fields:
+            fields['exception'] = ''.join(fields['exception'])
         yield fields
 
 capture_exception = switch((

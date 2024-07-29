@@ -138,7 +138,7 @@ def emit_metrics_to_file(dims, src, dst):
         print("Error writing out metrics to file "+ dst +": " + str(e))
 
 def init():
-    database_file = r"/var/lib/cassandra/nova/logevents.db"
+    database_file = r"/var/lib/garnet/logevents.db"
 
     connection = create_connection(database_file)
     connection.execute('pragma journal_mode=wal')

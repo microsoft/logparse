@@ -22,7 +22,6 @@ logger = sender.FluentSender('nova', port=25234, nanosecond_precision=True)
 log_file = '/var/log/garnet/log/garnet.log'
 sleep_time = 5 # Sleep time in seconds
 address = environ.get('ADDRESS')
-print("About to parse")
 
 try:
     with closing(novadb_log_events.init()) as connection:
@@ -45,8 +44,6 @@ try:
                     timestamp = datetime.datetime.timestamp(parsed_line["date"])
                     parsed_line["date"] = str(parsed_line["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
                     parsed_line["address"] = address
-                    print(address)
-                    print(parsed_line["date"])
                     if logger.emit_with_time('cassandra', timestamp, parsed_line):
                         print("log sent successfully")
                     else:

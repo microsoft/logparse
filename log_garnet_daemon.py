@@ -1,8 +1,8 @@
-#!/home/azureuser/cassandra-logparse/.venv/bin/python3
+#!/home/azureuser/garnet-logparse/.venv/bin/python3
 
 # Copyright (c) Microsoft Corporation. All rights reserved.
 
-# Processes cassandra log, emits it to Geneva, and stores log events in durable storage.
+# Processes garnet log, emits it to Geneva, and stores log events in durable storage.
 
 import datetime
 import garnet_log_events

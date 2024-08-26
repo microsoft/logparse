@@ -36,25 +36,22 @@ try:
 
             events = dict()
             num_lines = 0
-            try:
-                for parsed_line in systemlog.parse_log(lines): # Processes each log line, and outputs it as a map of fields
-                    print(parsed_line)
-                    num_lines += 1
-                    # Emit the parsed log to Geneva
-                    timestamp = datetime.datetime.timestamp(parsed_line["date"])
-                    parsed_line["date"] = str(parsed_line["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
-                    parsed_line["address"] = address
-                    if logger.emit_with_time('cassandra', timestamp, parsed_line):
-                        print("log sent successfully")
-                    else:
-                        print("Failed to send log")
 
-                    # Add the parsed log to a map, which will be iterated over later, and stored persistently in the DB
-                    if parsed_line['event_type'] != 'unknown':
-                        key = "{0}:{1}:{2}".format(parsed_line["event_product"], parsed_line["event_category"], parsed_line["event_type"])
-                        events[key] = parsed_line
-            except Exception as e:
-                print(f"An error occurred: {e}")
+            for parsed_line in systemlog.parse_log(lines): # Processes each log line, and outputs it as a map of fields
+                num_lines += 1
+                # Emit the parsed log to Geneva
+                timestamp = datetime.datetime.timestamp(parsed_line["date"])
+                parsed_line["date"] = str(parsed_line["date"]) # If not converted to string, fluentd throws a serialization error for datetime object
+                parsed_line["address"] = address
+                if logger.emit_with_time('cassandra', timestamp, parsed_line):
+                    print("log sent successfully")
+                else:
+                    print("Failed to send log")
+
+                # Add the parsed log to a map, which will be iterated over later, and stored persistently in the DB
+                if parsed_line['event_type'] != 'unknown':
+                    key = "{0}:{1}:{2}".format(parsed_line["event_product"], parsed_line["event_category"], parsed_line["event_type"])
+                    events[key] = parsed_line
 
             if num_lines == 0:
                 # This is to keep Pygtail from consuming >99% CPU
